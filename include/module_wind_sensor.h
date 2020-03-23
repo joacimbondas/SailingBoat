@@ -1,25 +1,53 @@
 #ifndef SAILINGBOAT_INCLUDE_MODULE_WIND_SENSOR_H_
 #define SAILINGBOAT_INCLUDE_MODULE_WIND_SENSOR_H_
-#include "ma3.h"
+#include <curl/curl.h>
 
 class ModuleWindSensor {
  public:
-  ModuleWindSensor(int spi_channel);
+  /**
+   * The constructor, initializes member fields
+   */
+  ModuleWindSensor();
+  /**
+   * Initializes "curl_"
+   * @return boolean on successful initialization
+   */
   bool Init();
+  /**
+   * Runs module, reads data from api and saves it
+   */
   void Run();
-  int GetReading();
-  void Report();
+  /**
+   * Returns "new_data_available_" member field
+   * @return "new_data_available_" boolean value
+   */
   bool IsNewDataAvailable();
+  /**
+   * Returns "reading_" member field
+   * @return "reading_" value
+   */
+  int GetReading();
+  /**
+   * Reports the latest reading
+   */
+  void Report();
  private:
+  /**
+   * CURL library for api fetching
+   */
+  CURL *curl_;
+  /**
+   * If ModuleWindSensor is initialized
+   */
   bool initialized_;
-  MA3 hardware_connection_ma3_;
-  int spi_channel_;
-  int reading_;
-  double internal_offset_;
-  ///
-  ///Have we Read the latest reading already?
-  ///
+  /**
+   * Is new data available for reading
+   */
   bool new_data_available_;
+  /**
+   * The latest reading
+   */
+  int reading_;
 };
 
 #endif // SAILINGBOAT_INCLUDE_MODULE_WIND_SENSOR_H_
