@@ -7,7 +7,6 @@
 #define MAESTRO_SERVO_LOWER_LIMIT 3968
 
 ModuleServo::ModuleServo(double lower_limit, double upper_limit, int channel) {
-  std::cout << "Constructing [Module] Servo" << std::endl;
   upper_boundary_ = upper_limit;
   lower_boundary_ = lower_limit;
   channel_ = channel;
@@ -19,6 +18,10 @@ ModuleServo::ModuleServo(double lower_limit, double upper_limit, int channel) {
       50
     );
   }
+}
+
+bool ModuleServo::GetInitialized() {
+  return initialized_;
 }
 
 void ModuleServo::Run() {
@@ -47,11 +50,4 @@ void ModuleServo::SetTarget(double limit) {
   } else if (limit < lower_boundary_) {
     target_ = lower_boundary_;
   }
-}
-
-bool ModuleServo::GetInitialized() {
-  if(!initialized_) {
-    std::cout << "MODUL SERVO HARDWARE FAILLLLLLLLL\n";
-  }
-  return initialized_;
 }

@@ -8,7 +8,6 @@
 #define MAESTRO_SERVO_LOWER_LIMIT 3968
 
 Maestro::Maestro() {
-  std::cout << "Constructing [Hardware] Maestro" << std::endl;
   // 992 & 2000 respectively IN MCU (Maestro Control Unit)
   file_descriptor_ = open(PORT_NAME, O_RDWR | O_NOCTTY);
   initialized_ = file_descriptor_ >= 0;
@@ -21,9 +20,6 @@ Maestro::Maestro() {
 }
 
 bool Maestro::GetInitialized() {
-  if(!initialized_) {
-    std::cout << "MAESTRO HARDWARE FAILLLLLLLLL\n";
-  }
   return initialized_;
 }
 

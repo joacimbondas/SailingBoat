@@ -2,9 +2,12 @@
 #include <iostream>
 
 ModuleGPS::ModuleGPS() {
-  std::cout << "Constructing [Module] GPS" << std::endl;
   initialized_ = gps_hardware_connection_.GetInitialized();
   new_data_available_ = false;
+}
+
+bool ModuleGPS::GetInitialized() {
+  return initialized_;
 }
 
 void ModuleGPS::Run() {
@@ -23,18 +26,9 @@ GPSData ModuleGPS::GetReading() {
 
 void ModuleGPS::Report() {
   if (new_data_available_) {
-    std::cout << "- - GPS SENSOR - -" << std::endl;
-    std::cout << "GPS LAT : " << data_reading_.latitude << std::endl;
-    std::cout << "GPS LON : " << data_reading_.longitude << std::endl;
-    std::cout << "GPS TIMESTAMP : " << data_reading_.timestamp << std::endl;
-    std::cout << "------------------" << std::endl;
+    std::cout << "Boat position lat       : " << data_reading_.latitude << std::endl;
+    std::cout << "Boat position long      : " << data_reading_.longitude << std::endl;
+    std::cout << "Timestamp               : " << data_reading_.timestamp << std::endl;
     new_data_available_ = false;
   }
-}
-
-bool ModuleGPS::GetInitialized() {
-  if(!initialized_) {
-    std::cout << "GPS HARDWARE FAILLLLLLLLL\n";
-  }
-  return initialized_;
 }
