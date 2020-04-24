@@ -7,7 +7,7 @@
 class ControlUnit {
  public:
   /**
-   * The constructor, initializes member fields and reads destinations from file
+   * The constructor, initializes member fields and saves destinations read from file
    * @param destination Destinations
    */
   ControlUnit(std::string destination);
@@ -27,11 +27,11 @@ class ControlUnit {
   void UpdateJourney();
  private:
   /**
-   * Active, if there are destionations left
+   * If there are destionations left
    */
   bool active_;
   /**
-   * Destinations, queue of all our GPS destinations
+   * Queue of all our GPS destinations
    */
   std::queue<GPSData> destination_;
 };

@@ -11,6 +11,10 @@ class GPS {
    */
   GPS();
   /**
+   * The destructor, closes gps connection
+   */
+  ~GPS();
+  /**
    * Returns "initialized_" member field value
    * @return "initialized_" object
    */
@@ -26,7 +30,7 @@ class GPS {
    */
   bool initialized_;
   /**
-   * Connection to GPS hardware, GPSMM is an unique vector
+   * Connection to GPS hardware
    */
   std::unique_ptr<gpsmm> gps_;
 };

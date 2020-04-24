@@ -1,12 +1,13 @@
+#include "include/threads.h"
+#include "include/module_servo.h"
+#include "include/module_gps.h"
+#include "include/module_cmps12.h"
+#include "include/module_wind.h"
+#include "include/calculation_unit.h"
+#include "include/control_unit.h"
+#include "include/logger.h"
 #include <thread>
 #include <chrono>
-#include "include/module_cmps12.h"
-#include "include/module_gps.h"
-#include "include/module_wind.h"
-#include "include/control_unit.h"
-#include "include/calculation_unit.h"
-#include "include/module_servo.h"
-#include "include/logger.h"
 #include <iostream>
 #include "test/doctest.h"
 #define RUDDER_CHANNEL 1
@@ -16,47 +17,6 @@
 #define SAIL_LOWER_THRESHOLD 0
 #define SAIL_UPPER_THRESHOLD 1
 #define CALCULATED_THRESHOLD 5.0 / 2.0
-
-void DriveRudder(ModuleServo &rudder) {
-  while (true) {
-    rudder.Run();
-  }
-}
-
-void DriveSail(ModuleServo &sail) {
-  while (true) {
-    sail.Run();
-  }
-}
-
-void PollGPS(ModuleGPS &gps) {
-  while (true) {
-    gps.Run();
-    std::this_thread::sleep_for(std::chrono::milliseconds(1200));
-  }
-}
-
-void PollCompass(ModuleCMPS12 &compass) {
-  while (true) {
-    compass.Run();
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
-  }
-}
-
-void PollWind(ModuleWind &wind) {
-  while (true) {
-    wind.Run();
-    std::this_thread::sleep_for(std::chrono::milliseconds(60000));
-  }
-}
-
-void LogData(Logger &data_logger) {
-  std::this_thread::sleep_for(std::chrono::milliseconds(6000));
-  while (true) {
-    data_logger.Publish();
-    std::this_thread::sleep_for(std::chrono::milliseconds(1500));
-  }
-}
 
 int main(int argc, char *argv[]) {
   // If testing should be done
@@ -89,49 +49,50 @@ int main(int argc, char *argv[]) {
   Logger data_logger("/home/alarm/.config/sailingBoat/logs/contest.json");
   Logger debug_logger("/home/alarm/.config/sailingBoat/logs/waypoint.json");
 
-  // Start threads for asynchronous updating
+  // Start polling threads
   std::thread t1(PollWind, std::ref(module_wind));
   std::thread t2(PollCompass, std::ref(module_compass));
   std::thread t3(PollGPS, std::ref(module_gps));
-  std::thread t4(DriveRudder, std::ref(servo_rudder));
-  std::thread t5(DriveSail, std::ref(servo_sail));
-  std::thread t6(LogData, std::ref(data_logger));
 
-  // Start rudder setting
+  // Start rudder and sail settings
   servo_rudder.SetTarget(0);
-  // Start sail setting
   servo_sail.SetTarget(0.5);
+
   // Beginning of line position
   GPSData waypoint1 = {};
   // End of line position
   GPSData waypoint2 = control_unit.GetDestination();
+
   // Runs until GPS module is online
-  while(waypoint1.latitude <= 0.001) {
+  while(waypoint1.latitude == 0.0) {
     waypoint1 = module_gps.GetReading();
-    std::cout << "Waiting for GPS hardware to warm-up...\n";
+    std::cout << "GPS not ready yet!" << std::endl;
   }
 
-  // Log entry
+  // Start the remaining threads
+  std::thread t4(DriveRudder, std::ref(servo_rudder));
+  std::thread t5(DriveSail, std::ref(servo_sail));
+  std::thread t6(LogData, std::ref(data_logger));
+
+  // Log entry id
   int entry = 1;
   // Runs until no more destinations
   while (control_unit.IsActive()) {
-    // Waits half a second each loop
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
-    // Current boat position
+    // Get new readings
     GPSData boat_pos = module_gps.GetReading();
-    // Wind direction
     double wind_angle = module_wind.GetReading();
-    // Boat sailing direction
     double boat_heading = module_compass.GetReading();
+
     // Updates values for sail calculation
     calculation_unit.SetBoatValues(waypoint1, waypoint2, boat_pos, wind_angle, boat_heading);
     // Calculates new servo targets
     calculation_unit.Calculate();
-    // Updates rudder setting
+
+    // Updates rudder and sail settings
     servo_rudder.SetTarget(calculation_unit.GetRudderAngle());
-    // Updates sail setting
     servo_sail.SetTarget(calculation_unit.GetSailAngle());
-    // Distance to destination
+
     double destination_distance = calculation_unit.CalculateDistance(boat_pos, waypoint2);
     // If close enough to destination
     if (destination_distance < CALCULATED_THRESHOLD) {
@@ -139,6 +100,7 @@ int main(int argc, char *argv[]) {
       control_unit.UpdateJourney();
       // Write debug
       debug_logger.PublishWaypoint(boat_pos, control_unit.GetDestination(), "CHECKPOINT REACHED, NEXT DESTINATION");
+
       // New beginning of line
       waypoint1 = waypoint2;
       // New end of line position
@@ -155,7 +117,7 @@ int main(int argc, char *argv[]) {
     entry++;
 
     // Outputs journey information
-    std::cout << "======================================" << std::endl;
+    std::cout << "=============================================" << std::endl;
     module_gps.Report();
     module_wind.Report();
     module_compass.Report();

@@ -14,7 +14,6 @@ CalculationUnit::CalculationUnit() {
   favored_tack_ = 0;
   angle_of_line_ = 0;
   nominal_angle_ = 0;
-  new_data_available_ = false;
 }
 
 void CalculationUnit::SetBoatValues(GPSData waypoint1,
@@ -37,14 +36,13 @@ void CalculationUnit::Calculate() {
   CalculateBoatDirection();
   CalculateRudderAngle();
   CalculateSailAngle();
-  new_data_available_ = true;
 }
 
 void CalculationUnit::CalculateDistanceFromBoatToLine() {
   GPSData position1;
+  // Calculate unit vector waypoint2 - waypoint1
   position1 = waypoint2_ - waypoint1_;
 
-  // Calculate unit vector waypoint2 - waypoint1
   double dotproduct = (waypoint2_.latitude * waypoint1_.latitude) + (waypoint2_.longitude * waypoint1_.longitude);
   double magnitude = sqrt(dotproduct);
 
@@ -63,12 +61,12 @@ void CalculationUnit::CheckTackVariable() {
 
 void CalculationUnit::CalculateAngleOfLine() {
   GPSData position = waypoint2_ - waypoint1_;
-  angle_of_line_ = atan2(position.longitude, position.latitude) * 180 / PI;
+  angle_of_line_ = RadiansToDegrees(atan2(position.longitude, position.latitude));
 }
 
 void CalculationUnit::CalculateNominalAngle() {
   nominal_angle_ = angle_of_line_
-      - (((2 * INCIDENCE_ANGLE) / PI) * ((atan(boat_to_line_distance_ / BOAT_TO_LINE_MAX_DISTANCE)) * 180 / PI));
+      - (((2 * INCIDENCE_ANGLE) / PI) * RadiansToDegrees(atan(boat_to_line_distance_ / BOAT_TO_LINE_MAX_DISTANCE)));
 }
 
 void CalculationUnit::CalculateBoatDirection() {
@@ -130,6 +128,10 @@ double CalculationUnit::DegreesToRadians(double degrees) {
   return degrees * (PI / 180);
 }
 
+double CalculationUnit::RadiansToDegrees(double radians) {
+  return radians * 180 / PI;
+}
+
 double CalculationUnit::NormalizeDegrees(double degrees) {
   while (degrees > 360) degrees -= 360;
   while (degrees < 0) degrees += 360;
@@ -146,9 +148,6 @@ double CalculationUnit::ConvertCoordinates(double from_low,
 }
 
 void CalculationUnit::Report() {
-  if (new_data_available_) {
-    std::cout << "Servo rudder angle      : " << rudder_angle_ << std::endl;
-    std::cout << "Servo sail angle        : " << sail_angle_ << std::endl;
-    new_data_available_ = false;
-  }
+  std::cout << "Servo rudder angle      : " << rudder_angle_ << std::endl;
+  std::cout << "Servo sail angle        : " << sail_angle_ << std::endl;
 }
